@@ -28,10 +28,25 @@ body {
     width: 230px;
     height: 340px;
     position: absolute;
-    top: 140px;
+    top: 404px;
     right: 10px;
     border: 1px solid rgba(47, 148, 209, 0.9);
     border-radius: 5px;
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+}
+
+.ngl-view {
+    width: 230px;
+    height: 340px;
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    border: 1px solid rgba(47, 148, 209, 0.9);
+    border-radius: 5px;
+}
+
+.ngl-view-blur {
     -webkit-backdrop-filter: blur(3px);
     backdrop-filter: blur(3px);
 }

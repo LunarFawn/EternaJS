@@ -6,6 +6,7 @@ import {
 import ROPWait from 'eterna/rscript/ROPWait';
 import debounce from 'lodash.debounce';
 import AnnotationManager from 'eterna/AnnotationManager';
+import Mol3DGate from 'eterna/mode/Mol3DGate';
 import Pose2D from './Pose2D';
 import EnergyScoreDisplay from './EnergyScoreDisplay';
 import RNAAnchorObject from './RNAAnchorObject';
@@ -187,6 +188,8 @@ export default class PoseField extends ContainerObject implements KeyboardListen
         if (Flashbang.app.isControlKeyDown) {
             return;
         }
+        // kkk ignore mouse event on 3d view
+        if (Mol3DGate.scope && Mol3DGate.scope.isOver3DCanvas) return;
 
         const pointerId = e.data.identifier;
         const {x, y} = e.data.global;
@@ -201,6 +204,9 @@ export default class PoseField extends ContainerObject implements KeyboardListen
     }
 
     private onPointerMove(e: InteractionEvent) {
+        // kkk ignore mouse event on 3d view
+        if (this._interactionCache.size === 0 && Mol3DGate.scope && Mol3DGate.scope.isOver3DCanvas) { return; }
+
         this._interactionCache.forEach((_point, pointerId) => {
             if (pointerId === e.data.identifier) {
                 const {x, y} = e.data.global;
@@ -333,6 +339,9 @@ export default class PoseField extends ContainerObject implements KeyboardListen
         if (!this.display.visible || !this.containsPoint(mouse.x, mouse.y)) {
             return false;
         }
+        // kkk ignore WheelEvent on 3D view
+        if (Mol3DGate.scope && Mol3DGate.scope.isOver3DCanvas) return false;
+
         if (e.deltaY < 0) {
             if (e.deltaY < -2 && e.deltaY < this._lastDeltaY) this._debounceZoomIn();
             this._lastDeltaY = e.deltaY;

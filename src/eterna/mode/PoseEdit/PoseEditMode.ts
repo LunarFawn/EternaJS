@@ -2,6 +2,7 @@ import * as log from 'loglevel';
 import {
     Container, DisplayObject, Point, Sprite, Text, Rectangle, InteractionEvent
 } from 'pixi.js';
+
 import EPars, {RNABase, RNAPaint} from 'eterna/EPars';
 import Eterna from 'eterna/Eterna';
 import {PuzzleID} from 'eterna/EternaApp';
@@ -71,6 +72,7 @@ import AnnotationManager, {
 } from 'eterna/AnnotationManager';
 import LibrarySelectionConstraint from 'eterna/constraints/constraints/LibrarySelectionConstraint';
 import AnnotationDialog from 'eterna/ui/AnnotationDialog';
+import ErrorDialog from 'eterna/ui/ErrorDialog';
 import GameMode from '../GameMode';
 import SubmittingDialog from './SubmittingDialog';
 import SubmitPoseDialog from './SubmitPoseDialog';
@@ -79,6 +81,8 @@ import MissionIntroMode from './MissionIntroMode';
 import MissionClearedPanel from './MissionClearedPanel';
 import ViewSolutionOverlay from '../DesignBrowser/ViewSolutionOverlay';
 import {PuzzleEditPoseData} from '../PuzzleEdit/PuzzleEditMode';
+import Mol3DGate, {PixiRenderCallback} from '../Mol3DGate';
+import ThreeView from '../ThreeView';
 
 export interface PoseEditParams {
     isReset?: boolean;
@@ -215,6 +219,12 @@ export default class PoseEditMode extends GameMode {
             onHelpClicked: () => this.onHelpClicked(),
             onChatClicked: () => {
                 Eterna.settings.showChat.value = !Eterna.settings.showChat.value;
+
+                // kkk set chat window position according to 3DView
+                // var H0 = 80;
+                // if (Eterna.settings.showChat.value) {
+                //     Eterna.chat.setPosition(H0);
+                // }
             },
             onInfoClicked: this._params.initSolution ? () => {
                 if (this._solutionView) {
@@ -416,6 +426,9 @@ export default class PoseEditMode extends GameMode {
             this._helpBar.display, HAlign.RIGHT, VAlign.TOP,
             HAlign.RIGHT, VAlign.TOP, 0 - this._solDialogOffset, 0
         );
+
+        // kkk call onResize of 3d view
+        this._3DView?.onResized();
 
         DisplayUtil.positionRelativeToStage(
             this._solutionNameText, HAlign.CENTER, VAlign.TOP,
@@ -756,12 +769,24 @@ export default class PoseEditMode extends GameMode {
                     }
                 }
             });
+            pose.startPickCallback = (closestIndex: number):void => {
+                for (let ii = 0; ii < poseFields.length; ++ii) {
+                    const poseField: PoseField = poseFields[ii];
+                    const poseToNotify = poseField.pose;
+                    if (ii === index) {
+                        poseToNotify.onVirtualPoseMouseDown(closestIndex);
+                    } else {
+                        poseToNotify.onVirtualPoseMouseDownPropagate(closestIndex);
+                    }
+                }
+            };
         };
 
         for (let ii = 0; ii < targetConditions.length; ii++) {
             const poseField: PoseField = new PoseField(true, this._annotationManager);
             this.addObject(poseField, this.poseLayer);
             const pose: Pose2D = poseField.pose;
+            pose.setEditMode(this); // kkk make channel between Pos2D and PoseEditMode
             bindAddBaseCB(pose, ii);
             bindPoseEdit(pose, ii);
             bindTrackMoves(pose, ii);
@@ -1043,6 +1068,21 @@ export default class PoseEditMode extends GameMode {
 
         // RScript can set our initial poseState
         this._poseState = this._puzzle.defaultMode;
+
+        // kkk add 3DWindow
+        const threePath = this._puzzle.getThreePath();
+        if (threePath) {
+            const url = new URL(threePath, Eterna.SERVER_URL);
+            const sequence = this.getSequence().split(' ')[0];
+            Mol3DGate.checkModelFile(url.href, sequence).then((resCount:number) => {
+                if (resCount === sequence.length) {
+                    this.add3DSprite(url.href, this._puzzle.getSecstructs()[0]);
+                } else {
+                    const PROMPT = '3D Structure is mismatched with the puzzle.';
+                    this.showDialog(new ErrorDialog(PROMPT));
+                }
+            });
+        }
     }
 
     private async switchToBrowser(solution: Solution, sortOnSolution: boolean = false): Promise<void> {
@@ -1304,7 +1344,7 @@ export default class PoseEditMode extends GameMode {
         this._scriptInterface.addCallback('set_tracked_indices',
             (
                 marks: (number | { baseIndex: number; colors?: number | number[] })[],
-                options?: {layerName?: string}
+                options?: { layerName?: string }
             ): void => {
                 const standardizedMarks = marks.map(
                     (mark) => (typeof (mark) === 'number' ? {baseIndex: mark as number} : mark)
@@ -1533,6 +1573,11 @@ export default class PoseEditMode extends GameMode {
     protected createContextMenu(): ContextMenu | null {
         if (this.isDialogOrNotifShowing || this.hasUILock) {
             return null;
+        }
+
+        // kkk add 3D Menu
+        if (this.mol3DGate && this.mol3DGate.isOver3DCanvas) {
+            return null;// this.create3DMenu();
         }
 
         const menu = new ContextMenu({horizontal: false});
@@ -3055,6 +3100,8 @@ export default class PoseEditMode extends GameMode {
         } else {
             execfoldCB(null);
         }
+        // kkk update 3D baseSequence
+        // this.mol3DGate?.updateSequence(this.getSequence().split(' '));
     }
 
     private poseEditByTargetDoFold(targetIndex: number): void {
@@ -3371,6 +3418,10 @@ export default class PoseEditMode extends GameMode {
 
         this.updateScore();
         this.transformPosesMarkers();
+
+        // kkk undo sequence change in 3D
+        this.mol3DGate?.updateSequence(this.getSequence().split(' '));
+        this.mol3DGate?.stage?.viewer.selectEBaseObject2(-1);
     }
 
     private moveUndoStackBackward(): void {
@@ -3389,6 +3440,10 @@ export default class PoseEditMode extends GameMode {
 
         this.updateScore();
         this.transformPosesMarkers();
+
+        // kkk undo sequence change in 3D
+        this.mol3DGate?.updateSequence(this.getSequence().split(' '));
+        this.mol3DGate?.stage?.viewer.selectEBaseObject2(-1);
     }
 
     private moveUndoStackToLastStable(): void {

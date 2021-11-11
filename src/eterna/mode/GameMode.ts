@@ -25,6 +25,8 @@ import NucleotideFinder from 'eterna/ui/NucleotideFinder';
 import ExplosionFactorDialog from 'eterna/ui/ExplosionFactorDialog';
 import NucleotideRangeSelector from 'eterna/ui/NucleotideRangeSelector';
 import CopyTextDialogMode from './CopyTextDialogMode';
+import ThreeView from './ThreeView';
+import Mol3DGate, {PixiRenderCallback} from './Mol3DGate';
 
 export default abstract class GameMode extends AppMode {
     public readonly bgLayer = new Container();
@@ -38,6 +40,43 @@ export default abstract class GameMode extends AppMode {
 
     /** Controls whether certain folding operations are run synchronously or queued up */
     public forceSync: boolean = false;
+
+    // kkk members for 3D
+    _3DView: ThreeView;
+    _3DFilePath: string | File | Blob = '';
+    mol3DGate: Mol3DGate;
+
+    // kkk transfer the mouse hover from 2D to 3D
+    public mouseHovered(index: number, color: number) {
+        this.mol3DGate?.mouseHovered(index, color);
+    }
+
+    // kkk create 3D ContextMenu
+    create3DMenu():ContextMenu {
+        return this._3DView.create3DMenu();
+    }
+
+    // kkk make 3d view on game scene with cif file
+    add3DSprite(filePath: string | File | Blob, _secStruct:string) {
+        this._3DFilePath = filePath;
+        if (!this._3DView) {
+            this._3DView = new ThreeView();
+            this.addObject(this._3DView, this.poseLayer);
+        }
+        const threeView = this._3DView;
+        function NGLCallback(canvas:HTMLCanvasElement, width:number, height:number):void {
+            threeView.updateNGLTexture(canvas, width, height);
+        }
+        this.mol3DGate?.stage?.dispose();
+        threeView.removeAnnotations();
+        if (threeView.pixiContainer) {
+            threeView.nglTextArray = new Array(0);
+            const callback:PixiRenderCallback = NGLCallback;
+            this.mol3DGate = new Mol3DGate(filePath, threeView.pixiContainer, threeView, callback, this, _secStruct);
+            // threeView.setToNormal();
+            threeView.onResized();
+        }
+    }
 
     protected setup(): void {
         super.setup();
@@ -279,6 +318,9 @@ export default abstract class GameMode extends AppMode {
 
     public onContextMenuEvent(e: Event): void {
         Assert.assertIsDefined(Flashbang.globalMouse);
+        let pos = Flashbang.globalMouse;
+        const ee = <PointerEvent> e;
+        if (ee.clientX !== undefined && ee.clientY !== undefined) pos = new Point(ee.clientX, ee.clientY);
         let handled = false;
         if (((e.target as HTMLElement).parentNode as HTMLElement).id === Eterna.PIXI_CONTAINER_ID) {
             if (this._contextMenuDialogRef.isLive) {
@@ -288,7 +330,7 @@ export default abstract class GameMode extends AppMode {
                 const menu = this.createContextMenu();
                 if (menu != null) {
                     this._contextMenuDialogRef = this.addObject(
-                        new ContextMenuDialog(menu, Flashbang.globalMouse),
+                        new ContextMenuDialog(menu, pos/* Flashbang.globalMouse */),
                         this.contextMenuLayer
                     );
                     handled = true;
@@ -439,6 +481,12 @@ export default abstract class GameMode extends AppMode {
         }
     }
 
+    getSequence(): string {
+        let sequenceString: string = this._poses[0].sequence.sequenceString();
+        if (this._poses[0].customNumbering != null) sequenceString += ` ${Utility.arrayToRangeString(this._poses[0].customNumbering)}`;
+        return sequenceString;
+    }
+
     protected showCopySequenceDialog(): void {
         Assert.assertIsDefined(this.modeStack);
         let sequenceString = this._poses[0].sequence.sequenceString();
@@ -548,7 +596,7 @@ export default abstract class GameMode extends AppMode {
     protected _targetConditions: (TargetConditions | undefined)[] = [];
 }
 
-class ContextMenuDialog extends Dialog<void> {
+export class ContextMenuDialog extends Dialog<void> {
     constructor(menu: ContextMenu, menuLoc: Point) {
         super();
         this._menu = menu;

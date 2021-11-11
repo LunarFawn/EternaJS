@@ -4,6 +4,7 @@ import {RegistrationGroup, Value} from 'signals';
 import KeyboardEventType from 'flashbang/input/KeyboardEventType';
 import KeyCode from 'flashbang/input/KeyCode';
 import Assert from 'flashbang/util/Assert';
+import Mol3DGate from 'eterna/mode/Mol3DGate';
 import Flashbang from './Flashbang';
 import ModeStack from './ModeStack';
 import Updatable from './Updatable';
@@ -43,6 +44,7 @@ export default class FlashbangApp {
         window.addEventListener(KeyboardEventType.KEY_UP, (e) => this.onKeyboardEvent(e));
         window.addEventListener('wheel', (e) => this.onMouseWheelEvent(e));
         window.addEventListener('contextmenu', (e) => this.onContextMenuEvent(e));
+        window.addEventListener('oncontextmenu', (e) => this.onContextMenuEvent(e));
         window.addEventListener('focus', () => { this.isActive.value = true; });
         window.addEventListener('blur', () => { this.isActive.value = false; });
 
@@ -174,6 +176,10 @@ export default class FlashbangApp {
     }
 
     protected onMouseWheelEvent(e: WheelEvent): void {
+        // kkk dispatch WheelEvent to NGL
+        if (Mol3DGate.scope && Mol3DGate.scope.isOver3DCanvas) {
+            Mol3DGate.scope.stage.viewer.getWebGLCanvas().dispatchEvent(new WheelEvent(e.type, e));
+        }
         const {topMode} = this._modeStack;
         if (topMode != null) {
             topMode.onMouseWheelEvent(e);
@@ -183,7 +189,10 @@ export default class FlashbangApp {
     protected onContextMenuEvent(e: Event): void {
         const {topMode} = this._modeStack;
         if (topMode != null) {
-            topMode.onContextMenuEvent(e);
+            if (Mol3DGate.scope?.isOver3DCanvas) {
+                e.preventDefault();
+                e.stopPropagation();
+            } else topMode.onContextMenuEvent(e);
         }
     }
 

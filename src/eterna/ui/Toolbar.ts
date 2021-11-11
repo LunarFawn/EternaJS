@@ -14,12 +14,17 @@ import Bitmaps from 'eterna/resources/Bitmaps';
 import {RScriptUIElementID} from 'eterna/rscript/RScriptUIElement';
 import BitmapManager from 'eterna/resources/BitmapManager';
 import AnnotationManager from 'eterna/AnnotationManager';
+import fileDialog from 'file-dialog';
+import Mol3DGate from 'eterna/mode/Mol3DGate';
+import GameMode from 'eterna/mode/GameMode';
+import PuzzleEditMode from 'eterna/mode/PuzzleEdit/PuzzleEditMode';
 import NucleotidePalette from './NucleotidePalette';
 import GameButton from './GameButton';
 import ToggleBar from './ToggleBar';
 import EternaMenu, {EternaMenuStyle} from './EternaMenu';
 import ScrollContainer from './ScrollContainer';
 import AnnotationPanel from './AnnotationPanel';
+import ErrorDialog from './ErrorDialog';
 
 export enum ToolbarType {
     PUZZLE,
@@ -29,7 +34,7 @@ export enum ToolbarType {
     FEEDBACK
 }
 
-class ToolbarButton extends GameButton {
+export class ToolbarButton extends GameButton {
     protected added() {
         super.added();
         this._arrow = new Sprite(BitmapManager.getBitmap(Bitmaps.ImgToolbarArrow));
@@ -92,6 +97,8 @@ export default class Toolbar extends ContainerObject {
     public freezeButton: GameButton;
 
     public boostersMenu: GameButton;
+
+    public validate3DButton: GameButton; // kkk declare 3d validation button
 
     public baseMarkerButton: GameButton;
     public librarySelectionButton: GameButton;
@@ -754,6 +761,31 @@ export default class Toolbar extends ContainerObject {
             this.submitButton.tooltip('Publish your puzzle!');
             this.lowerToolbarLayout.addHSpacer(SPACE_WIDE);
             this.addObject(this.submitButton, this.lowerToolbarLayout);
+        }
+
+        // kkk add 3d validation button
+        if (this._type === ToolbarType.PUZZLEMAKER) {
+            this.lowerToolbarLayout.addHSpacer(SPACE_WIDE);
+            this.validate3DButton = new ToolbarButton()
+                .up(Bitmaps.ImgFileOpen)
+                .over(Bitmaps.ImgFileOpenHover)
+                .down(Bitmaps.ImgFileOpen)
+                .tooltip('Validate 3D Models');
+
+            this.addObject(this.validate3DButton, this.lowerToolbarLayout);
+            this.regs.add(this.validate3DButton.clicked.connect(() => {
+                fileDialog({accept: ['.cif']}).then((file) => {
+                    const mode: PuzzleEditMode = this.mode as PuzzleEditMode;
+                    const sequence = mode.getSequence().split(' ')[0];
+                    Mol3DGate.checkModelFile(file[0], mode.getSequence().split(' ')[0]).then((resCount:number) => {
+                        if (mode && resCount === sequence.length) mode.add3DSprite(file[0], mode.structure);
+                        else {
+                            const PROMPT = 'Your selected file is mismatched with the puzzle.';
+                            mode?.showDialog(new ErrorDialog(PROMPT));
+                        }
+                    });
+                });
+            }));
         }
 
         this.rightArrow = this.makeArrowButton('right');

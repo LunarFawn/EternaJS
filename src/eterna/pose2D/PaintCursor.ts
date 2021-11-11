@@ -19,6 +19,14 @@ export default class PaintCursor extends GameObject implements Updatable {
         this._color = col;
     }
 
+    public getColor(): number {
+        return this._color;
+    }
+
+    public getOutColor(): number {
+        return this._outColor;
+    }
+
     public setShape(shape: number): void {
         switch (shape) {
             case RNABase.ADENINE:
@@ -103,14 +111,14 @@ export default class PaintCursor extends GameObject implements Updatable {
 
     private readonly _graphics: Graphics;
     private _color: number;
-    private _outColor: number;
+    public _outColor: number;
 
-    private static readonly YELLOW = 0xFFFF00;
-    private static readonly BLUE = 0x0000FF;
-    private static readonly RED = 0xFF0000;
-    private static readonly GREEN = 0x00FF00;
-    private static readonly WHITE = 0xFFFFFF;
-    private static readonly CYAN = 0x7EFFFF;
-    private static readonly GREY = 0xC0C0C0;
-    private static readonly NULL = 0x0;
+    static readonly YELLOW = 0xFFFF00;
+    static readonly BLUE = 0x0000FF;
+    static readonly RED = 0xFF0000;
+    static readonly GREEN = 0x00FF00;
+    static readonly WHITE = 0xFFFFFF;
+    static readonly CYAN = 0x7EFFFF;
+    static readonly GREY = 0xC0C0C0;
+    static readonly NULL = 0x0;
 }

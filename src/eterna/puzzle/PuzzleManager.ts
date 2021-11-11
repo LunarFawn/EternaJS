@@ -67,6 +67,7 @@ export interface PuzzleJSON {
     hint?: string;
     'max-votes'?: string;
     constraints?: string; // AMW TODO: string formatting restrictions
+    '3d_structure'?: string; //
 }
 
 interface ObjectiveString {
@@ -82,7 +83,8 @@ export default class PuzzleManager {
     }
 
     public async parsePuzzle(json: PuzzleJSON): Promise<Puzzle> {
-        const newpuz: Puzzle = new Puzzle(Number(json['id']), json['title'], json['type'], json['username']);
+        const newpuz: Puzzle = new Puzzle(Number(json['id']),
+            json['title'], json['type'], json['username'], json['3d_structure']);
 
         if (json['body']) {
             // Convention: mission texts are encapsulated by

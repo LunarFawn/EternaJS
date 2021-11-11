@@ -50,6 +50,7 @@ import CopyTextDialogMode from '../CopyTextDialogMode';
 import GameMode from '../GameMode';
 import SubmitPuzzleDialog, {SubmitPuzzleDetails} from './SubmitPuzzleDialog';
 import StructureInput from './StructureInput';
+import Mol3DGate from '../Mol3DGate';
 
 export interface PuzzleEditPoseData {
     sequence: string;
@@ -74,6 +75,7 @@ type SubmitPuzzleParams = {
     lock: string;
     begin_sequence: string;
     objectives: string;
+    three_structure_file: File;
 };
 
 export default class PuzzleEditMode extends GameMode {
@@ -313,6 +315,17 @@ export default class PuzzleEditMode extends GameMode {
                     }
                 }
             };
+            pose.startPickCallback = (closestIndex: number):void => {
+                for (let ii = 0; ii < this._numTargets; ++ii) {
+                    const poseField: PoseField = poseFields[ii];
+                    const poseToNotify = poseField.pose;
+                    if (ii === index) {
+                        poseToNotify.onVirtualPoseMouseDown(closestIndex);
+                    } else {
+                        poseToNotify.onVirtualPoseMouseDownPropagate(closestIndex);
+                    }
+                }
+            };
         };
 
         // We don't appropriately handle these, so for now just force them off
@@ -339,6 +352,8 @@ export default class PuzzleEditMode extends GameMode {
             const poseField: PoseField = new PoseField(true, this._annotationManager);
             this.addObject(poseField, this.poseLayer);
             const {pose} = poseField;
+
+            pose.setEditMode(this);
             pose.scoreFolder = this._folder;
             pose.molecularStructure = defaultPairs;
             pose.molecularBindingBonus = -4.86;
@@ -526,6 +541,9 @@ export default class PuzzleEditMode extends GameMode {
             HAlign.CENTER, VAlign.BOTTOM, 20, -20
         );
 
+        // kkk call onResize of 3d view
+        this._3DView?.onResized();
+
         const toolbarBounds = this._toolbar.display.getBounds();
         for (let ii = 0; ii < this._numTargets; ++ii) {
             const structureInput = this._structureInputs[ii];
@@ -552,6 +570,11 @@ export default class PuzzleEditMode extends GameMode {
     protected createContextMenu(): ContextMenu | null {
         if (this.isDialogOrNotifShowing || this.hasUILock) {
             return null;
+        }
+
+        // kkk add 3D Menu
+        if (this.mol3DGate && this.mol3DGate.isOver3DCanvas) {
+            return null;// this.create3DMenu();
         }
 
         const menu = new ContextMenu({horizontal: false});
@@ -819,8 +842,16 @@ export default class PuzzleEditMode extends GameMode {
             lock: lockString,
             // eslint-disable-next-line camelcase
             begin_sequence: beginningSequence,
-            objectives: JSON.stringify(objectives)
+            objectives: JSON.stringify(objectives),
+            three_structure_file: new File(['testing'], 'structure_upload_test.cif')
         };
+        // kkk
+        if (Mol3DGate.scope?._3DFilePath instanceof File) {
+            const blob = Mol3DGate.scope._3DFilePath.slice();
+            postParams.three_structure_file = new File([blob], 'structure_upload_test.cif');
+        } else {
+            postParams.three_structure_file = new File([''], 'structure_upload_test.cif');
+        }
 
         const submitText = this.showDialog(new AsyncProcessDialog('Submitting...')).ref;
         Eterna.client.submitPuzzle(postParams)
@@ -904,6 +935,9 @@ export default class PuzzleEditMode extends GameMode {
         }
 
         this.updateScore();
+        // kkk undo sequence change in 3D
+        this.mol3DGate?.updateSequence(this.getSequence().split(' '));
+        this.mol3DGate?.stage?.viewer.selectEBaseObject2(-1);
     }
 
     private moveUndoStackBackward(): void {
@@ -922,6 +956,10 @@ export default class PuzzleEditMode extends GameMode {
                 .getParenthesis(undefined, true);
         }
         this.updateScore();
+
+        // kkk undo sequence change in 3D
+        this.mol3DGate?.updateSequence(this.getSequence().split(' '));
+        this.mol3DGate?.stage?.viewer.selectEBaseObject2(-1);
     }
 
     private updateScore(): void {
@@ -1127,6 +1165,9 @@ export default class PuzzleEditMode extends GameMode {
             currentCustomLayouts.push(customLayout || null);
             currentTargetPairs.push(targetPairs);
         }
+        // kkk update 3D baseSequence
+        // this.mol3DGate?.updateSequence(this.getSequence().split(' '));
+
         if (noChange && this._stackLevel >= 0) {
             return;
         }
