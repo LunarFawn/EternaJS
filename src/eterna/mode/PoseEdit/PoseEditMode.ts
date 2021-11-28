@@ -28,9 +28,7 @@ import FolderManager from 'eterna/folding/FolderManager';
 import Folder, {MultiFoldResult, CacheKey} from 'eterna/folding/Folder';
 import {PaletteTargetType, GetPaletteTargetBaseType} from 'eterna/ui/NucleotidePalette';
 import PoseField from 'eterna/pose2D/PoseField';
-import Pose2D, {
-    Oligo, Layout, SCRIPT_MARKER_LAYER
-} from 'eterna/pose2D/Pose2D';
+import Pose2D, {Layout, SCRIPT_MARKER_LAYER} from 'eterna/pose2D/Pose2D';
 import PuzzleEditOp from 'eterna/pose2D/PuzzleEditOp';
 import BitmapManager from 'eterna/resources/BitmapManager';
 import ConstraintBar from 'eterna/constraints/ConstraintBar';
@@ -60,6 +58,7 @@ import {RankScrollData} from 'eterna/rank/RankScroll';
 import FolderSwitcher from 'eterna/ui/FolderSwitcher';
 import MarkerSwitcher from 'eterna/ui/MarkerSwitcher';
 import DotPlot from 'eterna/rnatypes/DotPlot';
+import {Oligo, OligoMode} from 'eterna/rnatypes/Oligo';
 import SecStruct from 'eterna/rnatypes/SecStruct';
 import Sequence from 'eterna/rnatypes/Sequence';
 import UITheme from 'eterna/ui/UITheme';
@@ -688,11 +687,13 @@ export default class PoseEditMode extends GameMode {
 
                 const currBlock = this.getCurrentUndoBlock(poseState);
                 const naturalMap = currBlock.reorderedOligosIndexMap(currBlock.oligoOrder);
-                const ranges = (this._poseState === PoseState.NATIVE && naturalMap !== undefined)
-                    ? highlightInfo.ranges.map((index: number) => {
-                        Assert.assertIsDefined(naturalMap);
-                        return naturalMap.indexOf(index);
-                    }) : highlightInfo.ranges;
+                const targetMap = currBlock.reorderedOligosIndexMap(currBlock.targetOligoOrder);
+                let ranges = highlightInfo.ranges;
+                if (this._poseState === PoseState.NATIVE && naturalMap !== undefined) {
+                    ranges = highlightInfo.ranges.map((index: number) => naturalMap.indexOf(index));
+                } else if (this._poseState === PoseState.TARGET && targetMap !== undefined) {
+                    ranges = highlightInfo.ranges.map((index: number) => targetMap.indexOf(index));
+                }
 
                 switch (highlightInfo.color) {
                     case HighlightType.RESTRICTED:
@@ -816,7 +817,7 @@ export default class PoseEditMode extends GameMode {
             if (tc['oligo_sequence']) {
                 this._targetOligo[ii] = Sequence.fromSequenceString(tc['oligo_sequence'] as string).baseArray;
                 this._oligoMode[ii] = tc['fold_mode'] === undefined
-                    ? Pose2D.OLIGO_MODE_DIMER
+                    ? OligoMode.DIMER
                     : Number(tc['fold_mode']);
                 this._oligoName[ii] = tc['oligo_name'];
             }
@@ -1741,7 +1742,7 @@ export default class PoseEditMode extends GameMode {
 
             if (Puzzle.isOligoType(tcType)) {
                 const foldMode: number = tc['fold_mode'] === undefined
-                    ? Pose2D.OLIGO_MODE_DIMER
+                    ? OligoMode.DIMER
                     : Number(tc['fold_mode']);
                 this._poses[poseIndex].setOligo(
                     Sequence.fromSequenceString(tc['oligo_sequence'] as string).baseArray,
@@ -1970,7 +1971,8 @@ export default class PoseEditMode extends GameMode {
                 + 'synthesized properly';
 
             if (!this.checkConstraints()) {
-                if (this._puzzle.isSoftConstraint || Eterna.DEV_MODE) {
+                // If we pass constraints when taking into account soft constraints, just prompt
+                if (this.checkConstraints(this._puzzle.isSoftConstraint || Eterna.DEV_MODE)) {
                     this.showConfirmDialog(NOT_SATISFIED_PROMPT).closed
                         .then((confirmed) => {
                             if (confirmed) {
@@ -2506,7 +2508,7 @@ export default class PoseEditMode extends GameMode {
 
         if (this._targetConditions[0] && Puzzle.isOligoType(this._targetConditions[0]['type'])) {
             oligoLen = (this._targetConditions[0]['oligo_sequence'] as string).length;
-            if (Number(this._targetConditions[0]['fold_mode']) === Pose2D.OLIGO_MODE_DIMER) oligoLen++;
+            if (Number(this._targetConditions[0]['fold_mode']) === OligoMode.DIMER) oligoLen++;
         } else if (this._targetConditions[0] && this._targetConditions[0]['type'] === 'multistrand') {
             const oligos: OligoDef[] = this._targetConditions[0]['oligos'] as OligoDef[];
             for (const oligo of oligos) {
@@ -2648,12 +2650,12 @@ export default class PoseEditMode extends GameMode {
         this.ropPresets();
     }
 
-    private checkConstraints(): boolean {
+    private checkConstraints(soft: boolean = false): boolean {
         return this._constraintBar.updateConstraints({
             undoBlocks: this._seqStacks[this._stackLevel],
             targetConditions: this._targetConditions,
             puzzle: this._puzzle
-        });
+        }, soft);
     }
 
     private updateScore(): void {
@@ -3175,14 +3177,14 @@ export default class PoseEditMode extends GameMode {
             );
         } else if ((tc as TargetConditions)['type'] === 'oligo') {
             foldMode = (tc as TargetConditions)['fold_mode'] === undefined
-                ? Pose2D.OLIGO_MODE_DIMER
+                ? OligoMode.DIMER
                 : Number(tc['fold_mode']);
-            if (foldMode === Pose2D.OLIGO_MODE_DIMER) {
+            if (foldMode === OligoMode.DIMER) {
                 log.debug('cofold');
                 const fullSeq = seq.concat(Sequence.fromSequenceString(`&${tc['oligo_sequence']}`));
                 malus = int(tc['malus'] as number * 100);
                 bestPairs = this._folder.cofoldSequence(fullSeq, null, malus, forceStruct);
-            } else if (foldMode === Pose2D.OLIGO_MODE_EXT5P) {
+            } else if (foldMode === OligoMode.EXT5P) {
                 const fullSeq = Sequence.fromSequenceString(tc['oligo_sequence'] as string).concat(seq);
                 bestPairs = this._folder.foldSequence(fullSeq, null, forceStruct);
             } else {
@@ -3193,16 +3195,16 @@ export default class PoseEditMode extends GameMode {
             bonus = tc['bonus'] as number;
             sites = tc['site'] as number[];
             foldMode = tc['fold_mode'] === undefined
-                ? Pose2D.OLIGO_MODE_DIMER
+                ? OligoMode.DIMER
                 : Number(tc['fold_mode']);
-            if (foldMode === Pose2D.OLIGO_MODE_DIMER) {
+            if (foldMode === OligoMode.DIMER) {
                 log.debug('cofold');
                 const fullSeq = seq.concat(Sequence.fromSequenceString(`&${tc['oligo_sequence']}`));
                 malus = int(tc['malus'] as number * 100);
                 bestPairs = this._folder.cofoldSequenceWithBindingSite(
                     fullSeq, sites, bonus, forceStruct, malus
                 );
-            } else if (foldMode === Pose2D.OLIGO_MODE_EXT5P) {
+            } else if (foldMode === OligoMode.EXT5P) {
                 const fullSeq = Sequence.fromSequenceString(tc['oligo_sequence'] as string).concat(seq);
                 bestPairs = this._folder.foldSequenceWithBindingSite(
                     fullSeq, this._targetPairs[ii], sites, Number(bonus), tc['fold_version']

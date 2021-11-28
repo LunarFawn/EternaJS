@@ -14,6 +14,7 @@ interface LibrarySelectionConstraintStatus extends BaseConstraintStatus {
 export default class LibrarySelectionConstraint extends Constraint<LibrarySelectionConstraintStatus> {
     // when numNtSelected is set to -1, it means any nonzero number will satisfy
     public readonly numNtSelected: number;
+    public readonly hard = true;
 
     constructor(numNtSelected: number) {
         super();
@@ -25,7 +26,7 @@ export default class LibrarySelectionConstraint extends Constraint<LibrarySelect
         const numNtSelected = (constraintContext.undoBlocks[0].librarySelections ?? []).length;
 
         return {
-            satisfied: numNtSelected === this.numNtSelected || (this.numNtSelected === -1 && numNtSelected > 0),
+            satisfied: numNtSelected <= this.numNtSelected || (this.numNtSelected === -1 && numNtSelected > 0),
             currentLibrarySelection: numNtSelected
         };
     }
@@ -43,10 +44,10 @@ export default class LibrarySelectionConstraint extends Constraint<LibrarySelect
         const requiredNum = this.numNtSelected === -1 ? 'any' : `${this.numNtSelected}`;
 
         if (requiredNum === 'any') {
-            tooltip.append('You must select SOME number of nt for library randomization.', 'altText');
+            tooltip.append('You must select SOME number of bases for library randomization.', 'altText');
         } else {
-            tooltip.append('You must select for library randomization exactly', 'altText')
-                .append(` ${requiredNum} nt.`);
+            tooltip.append('You must select for library randomization at most', 'altText')
+                .append(` ${requiredNum} bases.`);
         }
 
         if (forMissionScreen) {
@@ -60,7 +61,7 @@ export default class LibrarySelectionConstraint extends Constraint<LibrarySelect
         return {
             satisfied: status.satisfied,
             tooltip,
-            clarificationText: `RANDOMIZE ${requiredNum.toUpperCase()} BASES`,
+            clarificationText: 'RANDOMIZE BASES',
             statText,
             showOutline: true,
             drawBG: true,
