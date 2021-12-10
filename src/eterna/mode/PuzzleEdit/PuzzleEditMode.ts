@@ -185,6 +185,11 @@ export default class PuzzleEditMode extends GameMode {
         this._toolbar = new Toolbar(toolbarType, {
             states: this._numTargets,
             annotationManager: this._annotationManager
+        },
+        {
+            pairSwapButtonHandler: () => this.onEditButtonClicked(RNAPaint.PAIR),
+            baseMarkerButtonHandler: () => this.onEditButtonClicked(RNAPaint.BASE_MARK),
+            settingsButtonHandler: () => this.showSettingsDialog()
         });
         this.addObject(this._toolbar, this.uiLayer);
 

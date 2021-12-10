@@ -205,6 +205,10 @@ export default class PoseEditMode extends GameMode {
             showAdvancedMenus: this._puzzle.puzzleType !== PuzzleType.PROGRESSION,
             showLibrarySelect: this._puzzle.constraints?.some((con) => con instanceof LibrarySelectionConstraint),
             annotationManager: this._annotationManager
+        }, {
+            pairSwapButtonHandler: this.onSwapClicked.bind(this),
+            baseMarkerButtonHandler: () => this.setPosesColor(RNAPaint.BASE_MARK),
+            settingsButtonHandler: () => this.showSettingsDialog()
         });
         this.addObject(this._toolbar, this.uiLayer);
 
@@ -249,7 +253,7 @@ export default class PoseEditMode extends GameMode {
         this._toolbar.specButton.clicked.connect(() => this.showSpec());
         this._toolbar.copyButton.clicked.connect(() => this.showCopySequenceDialog());
         this._toolbar.pasteButton.clicked.connect(() => this.showPasteSequenceDialog());
-        this._toolbar.settingsButton.clicked.connect(() => this.showSettingsDialog());
+        // this._toolbar.settingsButton.clicked.connect(() => this.showSettingsDialog());
         this._toolbar.screenshotButton.clicked.connect(() => this.postScreenshot(this.createScreenshot()));
 
         this._toolbar.pipButton.clicked.connect(() => this.togglePip());
@@ -258,15 +262,15 @@ export default class PoseEditMode extends GameMode {
 
         this._toolbar.freezeButton.clicked.connect(() => this.toggleFreeze());
         this._toolbar.palette.targetClicked.connect((targetType) => this.onPaletteTargetSelected(targetType));
-        this._toolbar.pairSwapButton.clicked.connect(() => this.onSwapClicked());
+        // this._toolbar.pairSwapButton.clicked.connect(() => this.onSwapClicked());
 
         this._toolbar.nucleotideFindButton.clicked.connect(() => this.findNucleotide());
         this._toolbar.nucleotideRangeButton.clicked.connect(() => this.showNucleotideRange());
         this._toolbar.explosionFactorButton.clicked.connect(() => this.changeExplosionFactor());
 
-        this._toolbar.baseMarkerButton.clicked.connect(() => {
-            this.setPosesColor(RNAPaint.BASE_MARK);
-        });
+        // this._toolbar.baseMarkerButton.clicked.connect(() => {
+        //     this.setPosesColor(RNAPaint.BASE_MARK);
+        // });
 
         this._toolbar.librarySelectionButton.clicked.connect(() => {
             this.setPosesColor(RNAPaint.LIBRARY_SELECT);

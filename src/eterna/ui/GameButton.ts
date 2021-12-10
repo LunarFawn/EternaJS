@@ -23,6 +23,7 @@ export enum ButtonCategory {
 export default class GameButton extends Button implements KeyboardListener {
     public readonly toggled: Value<boolean> = new Value<boolean>(false);
     public static readonly DEFAULT_DOWN_SOUND: string = Sounds.SoundButtonClick;
+    public name: string | null = null;
     public category: ButtonCategory | null = null;
 
     constructor() {
@@ -76,6 +77,11 @@ export default class GameButton extends Button implements KeyboardListener {
 
     public setCategory(category: ButtonCategory): GameButton {
         this.category = category;
+        return this;
+    }
+
+    public setName(name: string): GameButton {
+        this.name = name;
         return this;
     }
 

@@ -142,6 +142,8 @@ export class ButtonsGroup extends ContainerObject {
     }
 }
 
+type VoidHandler = () => void;
+
 export default class Toolbar extends ContainerObject {
     // Core
     public zoomInButton?: GameButton;
@@ -240,6 +242,11 @@ export default class Toolbar extends ContainerObject {
     public backgroundContainer: Container;
     public backgroundContainerBackgroundContainer: Graphics;
     public text: Text;
+    private handlers: {
+        pairSwapButtonHandler: VoidHandler,
+        baseMarkerButtonHandler: VoidHandler,
+        settingsButtonHandler: VoidHandler
+    };
 
     constructor(
         type: ToolbarType,
@@ -257,6 +264,11 @@ export default class Toolbar extends ContainerObject {
             showAdvancedMenus?: boolean;
             showLibrarySelect?: boolean;
             annotationManager?: AnnotationManager;
+        },
+        handlers: {
+            pairSwapButtonHandler: VoidHandler
+            baseMarkerButtonHandler: VoidHandler
+            settingsButtonHandler: VoidHandler
         }
     ) {
         super();
@@ -269,6 +281,7 @@ export default class Toolbar extends ContainerObject {
         this._annotationManager = annotationManager;
         this._scrollStep = 55;
         this._scrollOffset = 0;
+        this.handlers = handlers;
     }
 
     public onResized() {
@@ -895,8 +908,19 @@ export default class Toolbar extends ContainerObject {
             .allStates(Bitmaps.ImgSwap)
             .tooltip('Swap paired bases. (5)')
             .rscriptID(RScriptUIElementID.SWAP)
-            .setCategory(ButtonCategory.SOLVE);
+            .setCategory(ButtonCategory.SOLVE)
+            .setName('pairSwapButton');
+        this.pairSwapButton.clicked.connect(this.handlers.pairSwapButtonHandler);
+
+        const pairSwapButtonCopy = new ToolbarButton()
+            .allStates(Bitmaps.ImgSwap)
+            .tooltip('Swap paired bases. (5)')
+            .rscriptID(RScriptUIElementID.SWAP)
+            .setCategory(ButtonCategory.SOLVE)
+            .setName('pairSwapButton');
         this._setButtonToCategory(ButtonCategory.SOLVE, this.pairSwapButton);
+        pairSwapButtonCopy.clicked.connect(this.handlers.pairSwapButtonHandler);
+        this._buttonsCopy.set('pairSwapButton', pairSwapButtonCopy);
 
         this.screenshotButton = new ToolbarButton()
             .allStates(Bitmaps.ImgScreenshot)
@@ -914,7 +938,23 @@ export default class Toolbar extends ContainerObject {
 
         this.settingsButton = new ToolbarButton()
             .allStates(Bitmaps.ImgSettings)
-            .tooltip('Game options');
+            .tooltip('Game options')
+            .setName('settingsButton')
+            .setCategory(ButtonCategory.SOLVE);
+        this._setButtonToCategory(ButtonCategory.SOLVE, this.settingsButton);
+        this.settingsButton.clicked.connect(this.handlers.settingsButtonHandler);
+
+        const settingsButtonCopy = new ToolbarButton()
+            .allStates(Bitmaps.ImgSettings)
+            .tooltip('Game options')
+            .setName('settingsButton')
+            .setCategory(ButtonCategory.SOLVE);
+        this._buttonsCopy.set('settingsButton', settingsButtonCopy);
+        settingsButtonCopy.clicked.connect(this.handlers.settingsButtonHandler);
+
+        this._scrollContainer.addObject(this.settingsButton, this._scrollContainer.content);
+        this._scrollContainer.addObject(settingsButtonCopy, this._scrollContainer.content);
+
         this.undoButton = new GameButton()
             .allStates(Bitmaps.ImgUndo)
             .tooltip('Undo')
@@ -932,7 +972,7 @@ export default class Toolbar extends ContainerObject {
         this._setButtonToCategory(ButtonCategory.SOLVE, this.redoButton);
 
         if (this._type !== ToolbarType.FEEDBACK) {
-            this.leftButtonsGroup = new ButtonsGroup([this.settingsButton, this.futureFeatureButton]);
+            this.leftButtonsGroup = new ButtonsGroup([this.futureFeatureButton]);
             this.rightButtonsGroup = new ButtonsGroup([this.undoButton, this.redoButton]);
             this.addObject(this.leftButtonsGroup, this.top);
             this.top.addHSpacer(SPACE_WIDE);
@@ -969,6 +1009,7 @@ export default class Toolbar extends ContainerObject {
             });
 
             this._scrollContainer.addObject(this.pairSwapButton, this._scrollContainer.content);
+            this._scrollContainer.addObject(pairSwapButtonCopy, this._scrollContainer.content);
 
             this.regs.add(this.pairSwapButton.clicked.connect(() => {
                 this._deselectAllPaintTools();
@@ -1024,11 +1065,23 @@ export default class Toolbar extends ContainerObject {
         this.baseMarkerButton = new ToolbarButton()
             .allStates(Bitmaps.ImgBaseMarker)
             .tooltip('Mark bases (hold ctrl)')
-            .setCategory(ButtonCategory.ANNOTATE);
+            .setCategory(ButtonCategory.ANNOTATE)
+            .setName('baseMarkerButton');
         this._setButtonToCategory(ButtonCategory.ANNOTATE, this.baseMarkerButton);
+        this.baseMarkerButton.clicked.connect(this.handlers.baseMarkerButtonHandler);
+
+        const baseMarkerButtonCopy = new ToolbarButton()
+            .allStates(Bitmaps.ImgBaseMarker)
+            .tooltip('Mark bases (hold ctrl)')
+            .setCategory(ButtonCategory.ANNOTATE)
+            .setName('baseMarkerButton');
+
+        baseMarkerButtonCopy.clicked.connect(this.handlers.baseMarkerButtonHandler);
+        this._buttonsCopy.set('baseMarkerButton', baseMarkerButtonCopy);
 
         if (this.type !== ToolbarType.FEEDBACK) {
             this._scrollContainer.addObject(this.baseMarkerButton, this._scrollContainer.content);
+            this._scrollContainer.addObject(baseMarkerButtonCopy, this._scrollContainer.content);
         }
 
         this.regs.add(this.baseMarkerButton.clicked.connect(() => {
@@ -1156,6 +1209,11 @@ export default class Toolbar extends ContainerObject {
         this.lowerToolbarContainer.addChild(this._tabsContainer);
         this._renderButtonsWithNewCategory(ButtonCategory.SOLVE);
         tab1.enable();
+        // this.lowerToolbarContainer.children.forEach((el) => {
+        //     const containerWidth = 666;
+        //     const bounds = el.getLocalBounds();
+        //     el.position.x = (Math.floor(containerWidth / 2)) - (Math.floor(bounds.width / 2));
+        // });
     }
 
     private _updateAvailableButtonsContainer(): void {
@@ -1199,6 +1257,10 @@ export default class Toolbar extends ContainerObject {
         return Array.from(this._tabs.values()).flat().find((button) => button.display === target)?.category ?? null;
     }
 
+    private _getButtonName(target: DisplayObject): string | null {
+        return Array.from(this._tabs.values()).flat().find((button) => button.display === target)?.name ?? null;
+    }
+
     private onDragStart(e: InteractionEvent): void {
         e.stopPropagation();
         if (e.target === this._scrollNextButton.container || e.target === this._scrollPrevButton.container) return;
@@ -1221,9 +1283,17 @@ export default class Toolbar extends ContainerObject {
         this._draggingElement = e.target;
         this._startPoint = new Point(e.target.position.x, e.target.position.y);
         this._startPointGlobal = new Point(e.data.global.x, e.data.global.y);
-        const btnIndex = this._startPointContainer.children.findIndex((el) => el === this._draggingElement);
+        const btnIndex = this._startPointContainer.children.findIndex((el) => el === e.target);
         if (btnIndex >= 0) {
             this._draggingElementIndex = btnIndex;
+            const name = this._getButtonName(e.target);
+            if (name) {
+                const foundButton = this._buttonsCopy.get(name);
+                if (foundButton) {
+                    foundButton.container.buttonMode = true;
+                    this._draggingElement = foundButton.container;
+                }
+            }
         }
     }
 
@@ -1417,7 +1487,7 @@ export default class Toolbar extends ContainerObject {
             const diff = this._getPointsDifference(e.data.global, this._startPointGlobal);
             if (diff.x < minPointDiff && diff.y < minPointDiff) return;
 
-            this._startPointContainer.removeChild(this._draggingElement);
+            // this._startPointContainer.removeChild(this._draggingElement);
             this.container.addChild(this._draggingElement);
             this._canDrag = true;
         }
@@ -1597,6 +1667,12 @@ export default class Toolbar extends ContainerObject {
             this.middle, HAlign.CENTER, VAlign.TOP,
             0, -20
         );
+
+        // this.lowerToolbarContainer.children.forEach((el) => {
+        //     const containerWidth = 666;
+        //     const bounds = el.getLocalBounds();
+        //     el.position.x = (Math.floor(containerWidth / 2)) - (Math.floor(bounds.width / 2));
+        // });
     }
 
     private updateArrowVisibility() {
@@ -1767,6 +1843,7 @@ export default class Toolbar extends ContainerObject {
     private _tabs: Map<ButtonCategory, GameButton[]>;
     private _tabsContainer: HLayoutContainer;
     private _currentTab: {container: Container, enable: () => void, disable: () => void, category: ButtonCategory};
+    private _buttonsCopy: Map<string, GameButton> = new Map();
 
     private _expandButtonContainer: HLayoutContainer;
 

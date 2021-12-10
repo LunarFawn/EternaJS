@@ -215,6 +215,8 @@ export default class RScriptEnv extends ContainerObject {
 
     public getUIElement(type: RScriptUIElementID, i: number = -1): RScriptUIElement | null {
         switch (type) {
+            case RScriptUIElementID.ACTION_MENU:
+                return this.ui.toolbar.actionMenu;
             case RScriptUIElementID.OBJECTIVES:
                 return this.ui.constraintsLayer;
             case RScriptUIElementID.SHAPEOBJECTIVE:
