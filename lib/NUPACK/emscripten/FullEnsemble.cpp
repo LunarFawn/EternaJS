@@ -75,39 +75,18 @@ FullAdvancedResult* FullEnsembleWithOligos(const std::string& seqString, int tem
     FullAdvancedResult* result = new FullAdvancedResult();
     
     int i, j;
-    //get dot bracket notation from data 
-    for (i = 0; i < suboptStructs.nStructs; i++ ) {
+    //get dot bracket notation from data
+    
+
+
+
+   for (i = 0; i < suboptStructs.nStructs; i++ ) {
         oneDnaStruct currentStruct = suboptStructs.validStructs[i];
+        std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
 
-        //each structure reset this
-        std::string singlestructure = "";             
-        for (j = 0; j < suboptStructs.seqlength; j++ ) {
-            if( currentStruct.theStruct[j] > j ) {
-                singlestructure.push_back('(');
-            }
-            else if ( currentStruct.theStruct[j] == -1 ) {
-                singlestructure.push_back('.');
-            }
-            else singlestructure.push_back(')');
-        }  
-
-        
-        std::string constraints = singlestructure;
-        for (pc = string, i = 0, j = 0; (*pc); pc++, j++) {
-            auto value = ((*pc) == '+' ? '&' : constraints[i++]);
-            if (j < singlestructure.length()) {
-                singlestructure[j] = value;
-            } else {
-                singlestructure.push_back(value);
-            }
-        }
-
-        //get energies
         double energyError = currentStruct.error;
         double correctedEnergy = currentStruct.correctedEnergy;  
-        
 
-        //write out data
         result->suboptStructures.push_back(singlestructure);
         result->suboptEnergyError.push_back(energyError);
         result->suboptFreeEnergy.push_back(correctedEnergy);
@@ -176,28 +155,19 @@ FullAdvancedResult* FullEnsembleNoBindingSite(const std::string& seqString, int 
     //initialize the result to return
     FullAdvancedResult* result = new FullAdvancedResult();
     
+    int i, j;
+    //get dot bracket notation from data
     
-    //get dot bracket notation from data 
-    for ( int i = 0; i < suboptStructs.nStructs; i++ ) {
-        oneDnaStruct currentStruct = suboptStructs.validStructs[i];
 
-        //each structure reset this
-        std::string singlestructure = "";             
-        for ( int j = 0; j < suboptStructs.seqlength; j++ ) {
-            if( currentStruct.theStruct[j] > j ) {
-                singlestructure.push_back('(');
-            }
-            else if ( currentStruct.theStruct[j] == -1 ) {
-                singlestructure.push_back('.');
-            }
-            else singlestructure.push_back(')');
-        }  
-        //get energies
+
+
+    for (i = 0; i < suboptStructs.nStructs; i++ ) {
+        oneDnaStruct currentStruct = suboptStructs.validStructs[i];
+        std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+
         double energyError = currentStruct.error;
         double correctedEnergy = currentStruct.correctedEnergy;  
-        
 
-        //write out data
         result->suboptStructures.push_back(singlestructure);
         result->suboptEnergyError.push_back(energyError);
         result->suboptFreeEnergy.push_back(correctedEnergy);
@@ -212,4 +182,140 @@ FullAdvancedResult* FullEnsembleNoBindingSite(const std::string& seqString, int 
     return result;
 }
 
+std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs) {
+    /*
+    This prints the structure of the fold using a '.' for 
+    unpaired bases, and ( ), { }, [ ], < > for pairs. 
+
+    The file specified by file name is appended.
+
+    Initially, thefold[i] = '.' for all i
+
+    If this ever becomes the slow step, it can be optimized to run faster
+    */
+
+   
+
+  
+  
+    int seqNum[ MAXSEQLENGTH+1]; 
+    int isNicked[ MAXSEQLENGTH];
+    int nNicks = 0;
+
+    int nicks[MAXSTRANDS];
+    int nickIndex;
+    int **etaN;
+    int length, tmpLength;
+    int seqlength;
+
+    //the rest is for printing purposes
+    seqlength = tmpLength = length = seq.length();
+    int i,j, pos;
+
+    for( i = 0; i < tmpLength; i++) {
+        isNicked[i] = 0;
+        if( seq[i] == '+') {
+        length--;
+        isNicked[ i - nNicks++ -1] = 1;
+        } 
+    }
+
+    //initialize nicks
+    for( i = 0; i < MAXSTRANDS; i++) {
+        nicks[i] = -1;
+    }
+
+    nickIndex = 0;
+    for( i = 0; i < length; i++) {
+        if( isNicked[i])
+        nicks[ nickIndex++] = i;
+    }
+
+
+    //overkill, but convenient
+    etaN = (int**) malloc( (length*(length+1)/2 + (length+1))*sizeof( int*));
+    InitEtaN( etaN, nicks, length);
+
+    int nStrands = etaN[ EtaNIndex( 0.5, seqlength-0.5, seqlength)][0]+1;
+    char *thefold = (char*) malloc( (seqlength + nStrands) * sizeof(char));
+    
+    char pairSymbols[] = { '(', ')', '{','}', '[', ']', '<', '>' };
+    int type = 0;
+    int nTypes = 4;
+   
+    int **pairlist; // Each row is i,j pair
+    int npairs; // number of pairs in structure
+   
+
+    char *parensString;
+    parensString = ( char*) malloc( (seqlength+1)*sizeof( char) );
+    int lastL, lastR;
+
+    
+    // Allocate memory for pairlist (this is more than we need, but be safe)
+    pairlist = (int **) malloc(seqlength * sizeof(int *));
+    for (i = 0; i < seqlength; i++) {
+        pairlist[i] = (int *) malloc(2 * sizeof(int));
+    }
+
+    // Create pairlist from thepairs
+    npairs = 0;
+    for( j = 0; j < seqlength; j++) {
+        if(thepairs[j] > j) {
+        pairlist[npairs][0] = j;
+        pairlist[npairs++][1] = thepairs[j];
+        }
+    }
+
+    // Creat dot-paren structure
+    for( i = 0; i < seqlength+1; i++) {
+        parensString[i] = '.';
+    }
+
+    //offSet = 0;
+    lastL = -1; 
+    lastR = seqlength;
+    for( i = 0; i < seqlength; i++) {
+        if( thepairs[i] != -1 && thepairs[i] > i) {
+        if( i > lastR || thepairs[i] > lastR) {
+            for( j = 0; j < i; j++) {
+            if( thepairs[j] > i && thepairs[j] < thepairs[i]) {
+                type = (type + 1) % nTypes;
+                break;
+            }
+            }
+        }
+
+        parensString[i] = pairSymbols[ 2*type];
+        parensString[ thepairs[i]] = pairSymbols[2*type + 1];
+        lastL = i;
+        lastR = thepairs[i];
+        }
+    }
+
+    for( i = 0; i < seqlength+nStrands-1; i++) {
+        thefold[i] = '.';
+    }
+
+    pos = 0;
+    for( i = 0; i < seqlength; i++) {
+        thefold[ pos++] = parensString[ i];
+        if( etaN[ EtaNIndex_same(i+0.5, seqlength)][0] == 1) {
+        thefold[ pos++] = '+';
+        }
+    }
+
+    //now create a string from the characer array to make the string version of the structure
+    
+    
+    std::string dotBracketStructure;
+    for (int k = 0; k < seqlength; k++ ) {
+          
+        dotBracketStructure.push_back(thefold[k]);
+          
+    }  
+
+    return dotBracketStructure;
+    
+}
 
