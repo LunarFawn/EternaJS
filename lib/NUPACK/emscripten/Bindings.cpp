@@ -45,6 +45,7 @@ EMSCRIPTEN_BINDINGS(EmscriptenBridge) {
         .property("energy", &FullEvalResult::energy);
 
     function("FullEval", &FullEval, allow_raw_pointers());
+    function("GenerateDotBracketPairsList", &GenerateDotBracketPairsList, allow_raw_pointers());
 
     class_<FullFoldResult>("FullFoldResult")
         .property("mfe", &FullFoldResult::mfe)
@@ -55,6 +56,7 @@ EMSCRIPTEN_BINDINGS(EmscriptenBridge) {
     function("FullFoldWithBindingSite", &FullFoldWithBindingSite, allow_raw_pointers());
     function("CoFoldSequence", &CoFoldSequence, allow_raw_pointers());
     function("CoFoldSequenceWithBindingSite", &CoFoldSequenceWithBindingSite, allow_raw_pointers());
+   
 
     class_<DotPlotResult>("DotPlotResult")
         .property("energy", &DotPlotResult::energy)
@@ -70,6 +72,7 @@ EMSCRIPTEN_BINDINGS(EmscriptenBridge) {
 
     function("FullEnsembleNoBindingSite", &FullEnsembleNoBindingSite, allow_raw_pointers());
     function("FullEnsembleWithOligos", &FullEnsembleWithOligos, allow_raw_pointers());
+    
 
 
 }

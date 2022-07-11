@@ -1,4 +1,5 @@
 #include "FullFold.h"
+#include "FullEnsemble.h"
 #include "EmscriptenUtils.h"
 
 #include "src/thermo/utils/pfuncUtilsConstants.h"
@@ -28,21 +29,24 @@ FullFoldResult* FullFoldDefault (const std::string& seqString, bool const pseudo
                         USE_LONG_HELIX_FOR_SALT_CORRECTION);
     }
 
+    
+    //initialize the result to return
     FullFoldResult* result = new FullFoldResult();
+   
+    
+    //get dot bracket notation from data
+    
+    oneDnaStruct currentStruct = mfeStructs.validStructs[0];
+    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+
+    double energyError = currentStruct.error;
+    double correctedEnergy = currentStruct.correctedEnergy;  
+
+    result->structure = singlestructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
 
-    for (int j = 0; j < mfeStructs.seqlength; j++) {
-        // AMW TODO: pairs-to-dbn here
-        if (mfeStructs.validStructs[0].theStruct[j] > j) {
-            result->structure.push_back('(');
-        } else if( mfeStructs.validStructs[0].theStruct[j] == -1) {
-            result->structure.push_back('.');
-        } else {
-            result->structure.push_back(')');
-        }
-    }
-
     clearDnaStructures(&mfeStructs);
+
 
     return result;
 }
@@ -71,85 +75,17 @@ FullFoldResult* FullFoldTemperature(double temperature_in, const std::string& se
     }
 
     FullFoldResult* result = new FullFoldResult();
+    
+    //get dot bracket notation from data
+    
+    oneDnaStruct currentStruct = mfeStructs.validStructs[0];
+    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+
+    double energyError = currentStruct.error;
+    double correctedEnergy = currentStruct.correctedEnergy;  
+
+    result->structure = singlestructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
-
-    if ( pseudoknotted ) {
-        // given partner-style array, writes dot-parens notation string. handles pseudoknots!
-        // example of partner-style array: '((.))' -> [4,3,-1,1,0]
-
-        std::vector< std::pair< int, int > > bps;
-        for (int ii = 0; ii < mfeStructs.seqlength; ++ii) {
-            if (mfeStructs.validStructs[0].theStruct[ii] != -1 && mfeStructs.validStructs[0].theStruct[ii] > ii) {
-                bps.push_back( std::make_pair( ii, mfeStructs.validStructs[0].theStruct[ii]) );
-            }
-        }
-        
-        std::vector< std::vector< std::pair< int, int > > > stems;
-        // #bps: list of bp lists
-        // # i.e. '((.))' is [[0,4],[1,3]]
-        // # Returns list of (list of bp lists), now sorted into stems
-        // # i.e. [ list of all bps in stem 1, list of all bps in stem 2]
-        //if debug: print(bps)
-        for (int ii = 0; ii < bps.size(); ++ii ) {
-            bool added = false;
-            for (int jj = 0; jj < stems.size(); ++jj) {
-                // is this bp adjacent to any element of an existing stem?
-                for (int kk = 0; kk < stems[jj].size(); ++kk) {
-                    if ((bps[ii].first - 1 == stems[jj][kk].first && bps[ii].second + 1 == stems[jj][kk].second) ||
-                            (bps[ii].first + 1 == stems[jj][kk].first && bps[ii].second - 1 == stems[jj][kk].second) ||
-                            (bps[ii].first - 1 == stems[jj][kk].second && bps[ii].second + 1 == stems[jj][kk].first) ||
-                            (bps[ii].first + 1 == stems[jj][kk].second && bps[ii].second - 1 == stems[jj][kk].first)) {
-                        // add to this stem
-                        stems[jj].push_back(bps[ii]);
-                        added = true;
-                        break;
-                    }
-                }
-                if (added) break;
-            }
-            if (!added) {
-                stems.push_back(std::vector< std::pair< int, int > >( 1, bps[ii] ) );
-            }
-        }
-       
-        std::string dbn( mfeStructs.seqlength, '.' );
-        std::vector< char > chars_L{ '(', '{', '[', '<' };
-        std::vector< char > chars_R{ ')', '}', ']', '>' };
-        if ( !stems.empty() ) {
-            for (int ii = 0; ii < stems.size(); ++ii ) {
-                auto const & stem = stems[ii];
-                
-                size_t pk_ctr = 0;
-                std::string substring = dbn.substr(stem[0].first+1,stem[0].second);
-                //check to see how many delimiter types exist in between where stem is going to go
-                // ah -- it's actually how many delimiters are only half-present, I think.
-                while ( ( substring.find(chars_L[pk_ctr]) != std::string::npos && substring.find(chars_R[pk_ctr]) == std::string::npos )
-                        || ( substring.find(chars_L[pk_ctr]) == std::string::npos && substring.find(chars_R[pk_ctr]) != std::string::npos ) ) {
-                    pk_ctr += 1;
-                }
-                for (int jj = 0; jj < stem.size(); ++jj ) {
-                    int i = stem[jj].first;
-                    int j = stem[jj].second;
-                    
-                    dbn[i] = chars_L[pk_ctr];
-                    dbn[j] = chars_R[pk_ctr];
-                }
-            }
-        }
-        for (int j = 0; j < mfeStructs.seqlength; j++) {
-            result->structure.push_back(dbn[j]);
-        }
-    } else {
-        for (int j = 0; j < mfeStructs.seqlength; j++) {
-            if (mfeStructs.validStructs[0].theStruct[j] > j) {
-                result->structure.push_back('(');
-            } else if( mfeStructs.validStructs[0].theStruct[j] == -1) {
-                result->structure.push_back('.');
-            } else {
-                result->structure.push_back(')');
-            }
-        }
-    }
 
     clearDnaStructures(&mfeStructs);
 
@@ -248,17 +184,18 @@ FullFoldResult* FullFoldWithBindingSite (const std::string& seqString, int site_
 
     FullFoldResult* result = new FullFoldResult();
 
-    for (j = 0; j < mfeStructs.seqlength; j++) {
-        if (mfeStructs.validStructs[0].theStruct[j] > j) {
-            result->structure.push_back('(');
-        } else if( mfeStructs.validStructs[0].theStruct[j] == -1) {
-            result->structure.push_back('.');
-        } else {
-            result->structure.push_back(')');
-        }
-    }
+    
+    //get dot bracket notation from data
+    
+    oneDnaStruct currentStruct = mfeStructs.validStructs[0];
+    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
 
+    double energyError = currentStruct.error;
+    double correctedEnergy = currentStruct.correctedEnergy;  
+
+    result->structure = singlestructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
+
     clearDnaStructures(&mfeStructs);
 
     return result;
@@ -285,32 +222,20 @@ FullFoldResult* CoFoldSequence (const std::string& seqString) {
                    1 /*DANGLETYPE*/, 37, TRUE, 1, SODIUM_CONC, MAGNESIUM_CONC,
                    USE_LONG_HELIX_FOR_SALT_CORRECTION);
 
-    std::string outStructure;
-    for (j = 0; j < mfeStructs.seqlength; j++) {
-        if (mfeStructs.validStructs[0].theStruct[j] > j) {
-            outStructure.push_back('(');
-        } else if( mfeStructs.validStructs[0].theStruct[j] == -1) {
-            outStructure.push_back('.');
-        } else {
-            outStructure.push_back(')');
-        }
-    }
-
-    std::string constraints = outStructure;
-    for (pc = string, i = 0, j = 0; (*pc); pc++, j++) {
-        auto value = ((*pc) == '+' ? '&' : constraints[i++]);
-        if (j < outStructure.length()) {
-            outStructure[j] = value;
-        } else {
-            outStructure.push_back(value);
-        }
-    }
-
+    
+    //get dot bracket notation from data
     FullFoldResult* result = new FullFoldResult();
+    oneDnaStruct currentStruct = mfeStructs.validStructs[0];
+    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+
+    double energyError = currentStruct.error;
+    double correctedEnergy = currentStruct.correctedEnergy;  
+
+    result->structure = singlestructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
-    result->structure = outStructure;
 
     clearDnaStructures(&mfeStructs);
+
 
     return result;
 }
@@ -347,32 +272,20 @@ FullFoldResult* CoFoldSequenceWithBindingSite (const std::string& seqString, int
     binding_site_cb = NULL;
     binding_cb = NULL;
 
-    std::string outStructure;
-    for (j = 0; j < mfeStructs.seqlength; j++) {
-        if (mfeStructs.validStructs[0].theStruct[j] > j) {
-            outStructure.push_back('(');
-        } else if( mfeStructs.validStructs[0].theStruct[j] == -1) {
-            outStructure.push_back('.');
-        } else {
-            outStructure.push_back(')');
-        }
-    }
-
-    std::string constraints = outStructure;
-    for (pc = string, i = 0, j = 0; (*pc); pc++, j++) {
-        auto value = ((*pc) == '+' ? '&' : constraints[i++]);
-        if (j < outStructure.length()) {
-            outStructure[j] = value;
-        } else {
-            outStructure.push_back(value);
-        }
-    }
-
+    //get dot bracket notation from data
     FullFoldResult* result = new FullFoldResult();
+    oneDnaStruct currentStruct = mfeStructs.validStructs[0];
+    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+
+    double energyError = currentStruct.error;
+    double correctedEnergy = currentStruct.correctedEnergy;  
+
+    result->structure = singlestructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
-    result->structure = outStructure;
 
     clearDnaStructures(&mfeStructs);
 
     return result;
 }
+
+

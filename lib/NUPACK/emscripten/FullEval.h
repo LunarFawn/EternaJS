@@ -10,5 +10,6 @@ struct FullEvalResult {
 };
 
 FullEvalResult* FullEval (int temperature_in, const std::string& seqString, const std::string& structString);
+std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs);
 
 #endif //NUPACK_FULLEVAL_H

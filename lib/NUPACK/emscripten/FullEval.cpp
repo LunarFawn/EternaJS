@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "FullEval.h"
+#include "FullEnsemble.h"
 #include "EmscriptenUtils.h"
 
 #include "src/thermo/utils/pfuncUtilsConstants.h"
