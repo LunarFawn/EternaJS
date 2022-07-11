@@ -26,6 +26,47 @@ function CreateFolder(type: any): Promise<Folder | null> {
     return type.create();
 }
 
+
+test('NuPACK:CoFoldSequence', () => {        
+    return expect(CreateFolder(NuPACK)
+    .then((folder) => {
+       if (folder === null) return;
+
+       let seq = Sequence.fromSequenceString("UCGGAACUUAGCUUAGAUGGUUGCGUUGAAUUCGAGAUCUACAUGGUAGUUCGCUAUCAUGUAGAUUUCGGGUUCCAUCUGCAGU");
+       let oligos = ["AUCUAAGCUA"];
+       let temperature: number = 37;
+       let isPsuedoknot:boolean = false;
+       let kcalDelta: number = -1;
+
+       const suboptEnsembleObject: 
+           SuboptEnsembleResult = folder.getSuboptEnsembleWithOligos (seq, oligos,kcalDelta,
+            isPsuedoknot, temperature
+       );	   
+       
+ 
+       let ensembleStructures: string[] = suboptEnsembleObject.suboptStructures;
+       let ensembleStructuresEnergyError: number[]= suboptEnsembleObject.suboptEnergyError;
+       let ensembleStructuresFreeEnergy: number[] = suboptEnsembleObject.suboptFreeEnergy;
+       
+   //console.log(ensembleStructures);
+
+       expect(ensembleStructures).toBeDefined();
+       expect(ensembleStructures[0])
+           .toEqual("........((((((((((...((((..((((((((((((((((((((((....))))))))))))))))))))))....))))..)))))))))).");
+       
+
+       expect(ensembleStructuresEnergyError).toBeDefined();
+    
+
+       expect(ensembleStructuresFreeEnergy).toBeDefined();
+       expect(ensembleStructuresFreeEnergy[0])
+           .toEqual(-45.781351419079456);
+
+   }))
+   .resolves.toBeUndefined(); // (we're returning a promise)
+
+});
+
 test('NuPACK:suboptstructuresNoOligos', () => {        
      return expect(CreateFolder(NuPACK)
      .then((folder) => {
