@@ -14,7 +14,7 @@ export enum RNABase {
     ADENINE = 1,
     URACIL = 4,
     CYTOSINE = 2,
-    CUT = 19,
+    CUT = 15,
 }
 
 /**
