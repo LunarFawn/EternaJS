@@ -20,6 +20,5 @@ DotPlotResult* GetDotPlot (double temperature_in, const std::string& seqString);
 FullFoldResult* FullFoldWithBindingSite (const std::string& string, int site_i, int site_p, int site_j, int site_q, int site_bonus);
 FullFoldResult* CoFoldSequence (const std::string& seqString);
 FullFoldResult* CoFoldSequenceWithBindingSite (const std::string& seqString, int site_i, int site_p, int site_j, int site_q, int site_bonus);
-std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs);
 
 #endif //NUPACK_FULLFOLD_H

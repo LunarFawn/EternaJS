@@ -52,7 +52,7 @@ test('NuPACK:CoFoldSequence', () => {
 
        expect(ensembleStructures).toBeDefined();
        expect(ensembleStructures[0])
-           .toEqual("........((((((((((...((((..((((((((((((((((((((((....))))))))))))))))))))))....))))..)))))))))).");
+           .toEqual("........((((((((((...((((..((((((((((((((((((((((....))))))))))))))))))))))....))))..+)))))))))");
        
 
        expect(ensembleStructuresEnergyError).toBeDefined();

@@ -49,10 +49,11 @@ FullAdvancedResult* FullEnsembleWithOligos(const std::string& seqString, int tem
     dnaStructures suboptStructs = {NULL, 0, 0, 0, NAD_INFINITY}; 
  
     //convert from how it comes from eterna to how nuapck needs it for joined oligos '+'
+   
     char* pc;
     do {
         pc = strchr(string, '&');
-        if (pc) (*pc) = '+';
+        if (pc)(*pc) = '+';
     } while(pc);
   
 
@@ -82,7 +83,7 @@ FullAdvancedResult* FullEnsembleWithOligos(const std::string& seqString, int tem
 
    for (i = 0; i < suboptStructs.nStructs; i++ ) {
         oneDnaStruct currentStruct = suboptStructs.validStructs[i];
-        std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+        std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
 
         double energyError = currentStruct.error;
         double correctedEnergy = currentStruct.correctedEnergy;  
@@ -163,7 +164,7 @@ FullAdvancedResult* FullEnsembleNoBindingSite(const std::string& seqString, int 
 
     for (i = 0; i < suboptStructs.nStructs; i++ ) {
         oneDnaStruct currentStruct = suboptStructs.validStructs[i];
-        std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+        std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
 
         double energyError = currentStruct.error;
         double correctedEnergy = currentStruct.correctedEnergy;  
@@ -182,7 +183,7 @@ FullAdvancedResult* FullEnsembleNoBindingSite(const std::string& seqString, int 
     return result;
 }
 
-std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs) {
+std::string GenerateDotBracketPairsList(char* seq, const int *thepairs) {
     /*
     This prints the structure of the fold using a '.' for 
     unpaired bases, and ( ), { }, [ ], < > for pairs. 
@@ -193,10 +194,14 @@ std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs) {
 
     If this ever becomes the slow step, it can be optimized to run faster
     */
+   //count oligos
+    char* pc;
+    do {
+        pc = strchr(seq, '&');
+        if (pc)(*pc) = '+';
+    } while(pc);
 
-   
-
-  
+    
   
     int seqNum[ MAXSEQLENGTH+1]; 
     int isNicked[ MAXSEQLENGTH];
@@ -208,17 +213,20 @@ std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs) {
     int length, tmpLength;
     int seqlength;
 
+   
     //the rest is for printing purposes
-    seqlength = tmpLength = length = seq.length();
+    tmpLength = length = strlen( seq);
     int i,j, pos;
 
     for( i = 0; i < tmpLength; i++) {
         isNicked[i] = 0;
-        if( seq[i] == '+') {
+        if( seq[i] == '+') {        
         length--;
         isNicked[ i - nNicks++ -1] = 1;
         } 
     }
+
+    
 
     //initialize nicks
     for( i = 0; i < MAXSTRANDS; i++) {
@@ -231,7 +239,7 @@ std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs) {
         nicks[ nickIndex++] = i;
     }
 
-
+    seqlength = length;
     //overkill, but convenient
     etaN = (int**) malloc( (length*(length+1)/2 + (length+1))*sizeof( int*));
     InitEtaN( etaN, nicks, length);
@@ -298,7 +306,7 @@ std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs) {
     }
 
     pos = 0;
-    for( i = 0; i < seqlength; i++) {
+    for( i = 0; i < length; i++) {
         thefold[ pos++] = parensString[ i];
         if( etaN[ EtaNIndex_same(i+0.5, seqlength)][0] == 1) {
         thefold[ pos++] = '+';
@@ -309,7 +317,7 @@ std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs) {
     
     
     std::string dotBracketStructure;
-    for (int k = 0; k < seqlength; k++ ) {
+    for (int k = 0; k < length; k++ ) {
           
         dotBracketStructure.push_back(thefold[k]);
           

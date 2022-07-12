@@ -14,5 +14,5 @@ struct FullAdvancedResult {
 
 FullAdvancedResult* FullEnsembleNoBindingSite (const std::string& seqString, int temperature, float kcalDeltaRange, bool const pseudoknotted);
 FullAdvancedResult* FullEnsembleWithOligos (const std::string& seqString, int temperature, float kcalDeltaRange,  bool const pseudoknotted);
-std::string GenerateDotBracketPairsList(std::string seq, const int *thepairs);
+std::string GenerateDotBracketPairsList(char* seq, const int *thepairs);
 #endif //NUPACK_FULLENSEMBLE_H

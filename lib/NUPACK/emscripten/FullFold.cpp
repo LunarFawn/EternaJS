@@ -37,7 +37,7 @@ FullFoldResult* FullFoldDefault (const std::string& seqString, bool const pseudo
     //get dot bracket notation from data
     
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+    std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  
@@ -79,7 +79,7 @@ FullFoldResult* FullFoldTemperature(double temperature_in, const std::string& se
     //get dot bracket notation from data
     
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+    std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  
@@ -188,7 +188,7 @@ FullFoldResult* FullFoldWithBindingSite (const std::string& seqString, int site_
     //get dot bracket notation from data
     
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+    std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  
@@ -209,10 +209,14 @@ FullFoldResult* CoFoldSequence (const std::string& seqString) {
     dnaStructures mfeStructs = {NULL, 0, 0, 0, 0};
     int i, j;
     char* pc;
-
+    int oligonumber=0;
     do {
         pc = strchr(string, '&');
-        if (pc) (*pc) = '+';
+        if (pc) 
+        {
+            (*pc) = '+';
+            oligonumber++;
+        }
     } while(pc);
 
     int seqLength = strlen(string);
@@ -226,7 +230,7 @@ FullFoldResult* CoFoldSequence (const std::string& seqString) {
     //get dot bracket notation from data
     FullFoldResult* result = new FullFoldResult();
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+    std::string singlestructure = GenerateDotBracketPairsList(string , currentStruct.theStruct);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  
@@ -247,11 +251,15 @@ FullFoldResult* CoFoldSequenceWithBindingSite (const std::string& seqString, int
     int seqNum[MAXSEQLENGTH+1];
     dnaStructures mfeStructs = {NULL, 0, 0, 0, 0};
     int i, j;
-
     char* pc;
+    int oligonumber=0;
     do {
         pc = strchr(string, '&');
-        if (pc) (*pc) = '+';
+        if (pc) 
+        {
+            (*pc) = '+';
+            oligonumber++;
+        }
     } while(pc);
 
     int seqLength = strlen(string);
@@ -275,7 +283,7 @@ FullFoldResult* CoFoldSequenceWithBindingSite (const std::string& seqString, int
     //get dot bracket notation from data
     FullFoldResult* result = new FullFoldResult();
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(seqString, currentStruct.theStruct);
+    std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  

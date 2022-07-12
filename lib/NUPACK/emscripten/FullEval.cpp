@@ -55,13 +55,14 @@ FullEvalResult* FullEval (int temperature_in, const std::string& seqString, cons
 
     gEvalResult = result; // set the collecting array
     eos_cb = _eos_cb; // activate the callback
-
+    int oligonumber=0;
     do {
         pc = strchr(string, '&');
         if (pc) {
             num_cuts++;
             (*pc) = '+';
             structure[pc - string] = '+';
+            int oligonumber=0;
         }
     } while(pc);
 
@@ -96,3 +97,4 @@ FullEvalResult* FullEval (int temperature_in, const std::string& seqString, cons
     result->energy = energy;
     return result;
 }
+
