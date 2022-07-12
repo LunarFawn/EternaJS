@@ -1,13 +1,16 @@
+#include <vector>
+#include <utility>
+
 #include "FullFold.h"
 #include "FullEnsemble.h"
 #include "EmscriptenUtils.h"
+
 
 #include "src/thermo/utils/pfuncUtilsConstants.h"
 #include "src/thermo/utils/pfuncUtilsHeader.h"
 #include "src/shared/utilsHeader.h"
 #include "src/thermo/utils/DNAExternals.h"
-#include <vector>
-#include <utility>
+
 
 FullFoldResult* FullFoldDefault (const std::string& seqString, bool const pseudoknotted = false) {
     auto autoSeqString = MakeCString(seqString);
@@ -37,12 +40,13 @@ FullFoldResult* FullFoldDefault (const std::string& seqString, bool const pseudo
     //get dot bracket notation from data
     
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
+    bool forEternaDigest = true;
+    std::string singleStructure = GetDotParensStructureFromFoldStructure(string, currentStruct.theStruct, forEternaDigest);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  
 
-    result->structure = singlestructure;
+    result->structure = singleStructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
 
     clearDnaStructures(&mfeStructs);
@@ -79,12 +83,13 @@ FullFoldResult* FullFoldTemperature(double temperature_in, const std::string& se
     //get dot bracket notation from data
     
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
+    bool forEternaDigest = true;
+    std::string singleStructure = GetDotParensStructureFromFoldStructure(string, currentStruct.theStruct, forEternaDigest);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  
 
-    result->structure = singlestructure;
+    result->structure = singleStructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
 
     clearDnaStructures(&mfeStructs);
@@ -188,12 +193,13 @@ FullFoldResult* FullFoldWithBindingSite (const std::string& seqString, int site_
     //get dot bracket notation from data
     
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
+    bool forEternaDigest = true;
+    std::string singleStructure = GetDotParensStructureFromFoldStructure(string, currentStruct.theStruct, forEternaDigest);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  
 
-    result->structure = singlestructure;
+    result->structure = singleStructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
 
     clearDnaStructures(&mfeStructs);
@@ -230,12 +236,13 @@ FullFoldResult* CoFoldSequence (const std::string& seqString) {
     //get dot bracket notation from data
     FullFoldResult* result = new FullFoldResult();
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(string , currentStruct.theStruct);
+    bool forEternaDigest = true;
+    std::string singleStructure = GetDotParensStructureFromFoldStructure(pc, currentStruct.theStruct, forEternaDigest);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  
 
-    result->structure = singlestructure;
+    result->structure = singleStructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
 
     clearDnaStructures(&mfeStructs);
@@ -283,12 +290,13 @@ FullFoldResult* CoFoldSequenceWithBindingSite (const std::string& seqString, int
     //get dot bracket notation from data
     FullFoldResult* result = new FullFoldResult();
     oneDnaStruct currentStruct = mfeStructs.validStructs[0];
-    std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
+    bool forEternaDigest = true;
+    std::string singleStructure = GetDotParensStructureFromFoldStructure(pc, currentStruct.theStruct, forEternaDigest);
 
     double energyError = currentStruct.error;
     double correctedEnergy = currentStruct.correctedEnergy;  
 
-    result->structure = singlestructure;
+    result->structure = singleStructure;
     result->mfe = mfeStructs.validStructs[0].correctedEnergy;
 
     clearDnaStructures(&mfeStructs);

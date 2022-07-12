@@ -2,6 +2,8 @@
 #include "FullFold.h"
 #include "FullEnsemble.h"
 
+
+
 #include "src/thermo/utils/pfuncUtilsConstants.h"
 #include "src/thermo/utils/pfuncUtilsHeader.h"
 #include "src/shared/utilsHeader.h"
@@ -72,9 +74,8 @@ EMSCRIPTEN_BINDINGS(EmscriptenBridge) {
 
     function("FullEnsembleNoBindingSite", &FullEnsembleNoBindingSite, allow_raw_pointers());
     function("FullEnsembleWithOligos", &FullEnsembleWithOligos, allow_raw_pointers());
-    function("GenerateDotBracketPairsList", &GenerateDotBracketPairsList, allow_raw_pointers());
-
-
+    function("GetDotParensStructureFromFoldStructure", &GetDotParensStructureFromFoldStructure, allow_raw_pointers());
+    
 }
 
 #endif

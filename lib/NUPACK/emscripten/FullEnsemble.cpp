@@ -1,13 +1,15 @@
+#include <vector>
+#include <utility>
+#include <string> 
+
 #include "FullEnsemble.h"
 #include "EmscriptenUtils.h"
+
 
 #include "src/thermo/utils/pfuncUtilsConstants.h"
 #include "src/thermo/utils/pfuncUtilsHeader.h"
 #include "src/shared/utilsHeader.h"
 #include "src/thermo/utils/DNAExternals.h"
-#include <vector>
-#include <utility>
-#include <string> 
 
 
 FullAdvancedResult* FullEnsembleWithOligos(const std::string& seqString, int temperature, float kcalDeltaRange, bool const pseudoknotted = false)
@@ -53,7 +55,7 @@ FullAdvancedResult* FullEnsembleWithOligos(const std::string& seqString, int tem
     char* pc;
     do {
         pc = strchr(string, '&');
-        if (pc)(*pc) = '+';
+        if (pc) (*pc) = '+';
     } while(pc);
   
 
@@ -83,12 +85,14 @@ FullAdvancedResult* FullEnsembleWithOligos(const std::string& seqString, int tem
 
    for (i = 0; i < suboptStructs.nStructs; i++ ) {
         oneDnaStruct currentStruct = suboptStructs.validStructs[i];
-        std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
+        bool forEternaDigest = true;
+        std::string singleStructure = GetDotParensStructureFromFoldStructure(string, currentStruct.theStruct, forEternaDigest);
+        
 
         double energyError = currentStruct.error;
         double correctedEnergy = currentStruct.correctedEnergy;  
 
-        result->suboptStructures.push_back(singlestructure);
+        result->suboptStructures.push_back(singleStructure);
         result->suboptEnergyError.push_back(energyError);
         result->suboptFreeEnergy.push_back(correctedEnergy);
     }
@@ -164,12 +168,13 @@ FullAdvancedResult* FullEnsembleNoBindingSite(const std::string& seqString, int 
 
     for (i = 0; i < suboptStructs.nStructs; i++ ) {
         oneDnaStruct currentStruct = suboptStructs.validStructs[i];
-        std::string singlestructure = GenerateDotBracketPairsList(string, currentStruct.theStruct);
+        bool forEternaDigest = true;
+        std::string singleStructure = GetDotParensStructureFromFoldStructure(string, currentStruct.theStruct, forEternaDigest);
 
         double energyError = currentStruct.error;
         double correctedEnergy = currentStruct.correctedEnergy;  
 
-        result->suboptStructures.push_back(singlestructure);
+        result->suboptStructures.push_back(singleStructure);
         result->suboptEnergyError.push_back(energyError);
         result->suboptFreeEnergy.push_back(correctedEnergy);
     }
@@ -183,7 +188,8 @@ FullAdvancedResult* FullEnsembleNoBindingSite(const std::string& seqString, int 
     return result;
 }
 
-std::string GenerateDotBracketPairsList(char* seq, const int *thepairs) {
+
+std::string GetDotParensStructureFromFoldStructure(char* RNAseq, const int *thepairs, bool makeForEterna) {
     /*
     This prints the structure of the fold using a '.' for 
     unpaired bases, and ( ), { }, [ ], < > for pairs. 
@@ -195,13 +201,11 @@ std::string GenerateDotBracketPairsList(char* seq, const int *thepairs) {
     If this ever becomes the slow step, it can be optimized to run faster
     */
    //count oligos
-    char* pc;
+    char* newSeq;
     do {
-        pc = strchr(seq, '&');
-        if (pc)(*pc) = '+';
-    } while(pc);
-
-    
+        newSeq = strchr(RNAseq, '&');
+        if (newSeq) (*newSeq) = '+';
+    } while(newSeq);
   
     int seqNum[ MAXSEQLENGTH+1]; 
     int isNicked[ MAXSEQLENGTH];
@@ -210,17 +214,17 @@ std::string GenerateDotBracketPairsList(char* seq, const int *thepairs) {
     int nicks[MAXSTRANDS];
     int nickIndex;
     int **etaN;
-    int length, tmpLength;
-    int seqlength;
+    int length, tmpLength, seqlength;
+    
 
    
     //the rest is for printing purposes
-    tmpLength = length = strlen( seq);
+    tmpLength = length = strlen(RNAseq);
     int i,j, pos;
 
     for( i = 0; i < tmpLength; i++) {
         isNicked[i] = 0;
-        if( seq[i] == '+') {        
+        if( RNAseq[i] == '+') {        
         length--;
         isNicked[ i - nNicks++ -1] = 1;
         } 
@@ -306,18 +310,25 @@ std::string GenerateDotBracketPairsList(char* seq, const int *thepairs) {
     }
 
     pos = 0;
-    for( i = 0; i < length; i++) {
+    for( i = 0; i < seqlength; i++) {
         thefold[ pos++] = parensString[ i];
         if( etaN[ EtaNIndex_same(i+0.5, seqlength)][0] == 1) {
-        thefold[ pos++] = '+';
+            if (makeForEterna==true)
+            {
+                thefold[ pos++] = '&';
+            }
+            else
+            {
+                thefold[ pos++] = '+';
+            }   
         }
     }
 
     //now create a string from the characer array to make the string version of the structure
     
     
-    std::string dotBracketStructure;
-    for (int k = 0; k < length; k++ ) {
+    std::string dotBracketStructure = "";
+    for (int k = 0; k < seqlength; k++ ) {
           
         dotBracketStructure.push_back(thefold[k]);
           

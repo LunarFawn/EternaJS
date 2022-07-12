@@ -10,5 +10,4 @@ struct FullEvalResult {
 };
 
 FullEvalResult* FullEval (int temperature_in, const std::string& seqString, const std::string& structString);
-
 #endif //NUPACK_FULLEVAL_H
