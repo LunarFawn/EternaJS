@@ -43,24 +43,45 @@ test('NuPACK:CoFoldSequence', () => {
             isPsuedoknot, temperature
        );	   
        
- 
+    
        let ensembleStructures: string[] = suboptEnsembleObject.suboptStructures;
        let ensembleStructuresEnergyError: number[]= suboptEnsembleObject.suboptEnergyError;
        let ensembleStructuresFreeEnergy: number[] = suboptEnsembleObject.suboptFreeEnergy;
+
+       let ensembleDefect: number = suboptEnsembleObject.ensembleDefect;
+       let ensembleDefectNormalized: number = suboptEnsembleObject.ensembleDefectNormalized;
+       let mfeDefect: number = suboptEnsembleObject.mfeDefect;
+       let mfeDefectNormalized: number = suboptEnsembleObject.mfeDefectNormalized;
        
    //console.log(ensembleStructures);
 
-       expect(ensembleStructures).toBeDefined();
-       expect(ensembleStructures[0])
-           .toEqual("........((((((((((...((((..((((((((((((((((((((((....))))))))))))))))))))))....))))..&)))))))))");
-       
+        expect(ensembleStructures).toBeDefined();
+        expect(ensembleStructures[0])
+            .toEqual("........((((((((((...((((..((((((((((((((((((((((....))))))))))))))))))))))....))))..&)))))))))");
+        
 
-       expect(ensembleStructuresEnergyError).toBeDefined();
-    
+        expect(ensembleStructuresEnergyError).toBeDefined();
+        
 
-       expect(ensembleStructuresFreeEnergy).toBeDefined();
-       expect(ensembleStructuresFreeEnergy[0])
-           .toEqual(-45.781351419079456);
+        expect(ensembleStructuresFreeEnergy).toBeDefined();
+        expect(ensembleStructuresFreeEnergy[0])
+            .toEqual(-45.781351419079456);
+            
+        expect(ensembleDefect).toBeDefined();
+        expect(ensembleDefect)
+        .toEqual(4.843618974391774);
+
+        expect(ensembleDefectNormalized).toBeDefined();
+        expect(ensembleDefectNormalized)
+        .toEqual(0.05098546288833446);
+
+        expect(mfeDefect).toBeDefined();
+        expect(mfeDefect)
+        .toEqual(2);
+
+        expect(mfeDefectNormalized).toBeDefined();
+        expect(mfeDefectNormalized)
+            .toEqual(0.021052631578947368);
 
    }))
    .resolves.toBeUndefined(); // (we're returning a promise)
@@ -79,7 +100,7 @@ test('NuPACK:suboptstructuresNoOligos', () => {
 
         const suboptEnsembleObject: 
             SuboptEnsembleResult = folder.getSuboptEnsembleNoBindingSite (
-            sequence, kcalDelta, 
+            sequence, kcalDelta,
             isPsuedoknot, temperature
         );	   
         

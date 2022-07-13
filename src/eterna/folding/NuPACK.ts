@@ -109,6 +109,9 @@ export default class NuPACK extends Folder {
         // initialize empty result cache
         suboptdataCache = {
             ensembleDefect: 0,
+            ensembleDefectNormalized: 0,
+            mfeDefect: 0,
+            mfeDefectNormalized: 0,
             suboptStructures: [],
             suboptEnergyError: [],
             suboptFreeEnergy: []
@@ -136,6 +139,11 @@ export default class NuPACK extends Folder {
         }
 
         // prepare teh results for return and storage in cache
+        suboptdataCache.ensembleDefect = result.ensembleDefect;
+        suboptdataCache.ensembleDefectNormalized = result.ensembleDefectNormalized;
+        suboptdataCache.mfeDefect = result.mfeDefect;
+        suboptdataCache.mfeDefectNormalized = result.mfeDefectNormalized;
+
         const suboptStructures: string[] = EmscriptenUtil.stdVectorToArray(result.suboptStructures);
         suboptdataCache.suboptStructures = suboptStructures;
 
@@ -171,6 +179,9 @@ export default class NuPACK extends Folder {
         // initialize empty result cache
         suboptdataCache = {
             ensembleDefect: 0,
+            ensembleDefectNormalized: 0,
+            mfeDefect: 0,
+            mfeDefectNormalized: 0,
             suboptStructures: [],
             suboptEnergyError: [],
             suboptFreeEnergy: []
@@ -185,6 +196,11 @@ export default class NuPACK extends Folder {
         if (!result) {
             throw new Error('NuPACK returned a null result');
         }
+
+        suboptdataCache.ensembleDefect = result.ensembleDefect;
+        suboptdataCache.ensembleDefectNormalized = result.ensembleDefectNormalized;
+        suboptdataCache.mfeDefect = result.mfeDefect;
+        suboptdataCache.mfeDefectNormalized = result.mfeDefectNormalized;
 
         // prepare teh results for return and storage in cache
         const suboptStructures: string[] = EmscriptenUtil.stdVectorToArray(result.suboptStructures);

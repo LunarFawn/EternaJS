@@ -39,6 +39,8 @@ EMSCRIPTEN_BINDINGS(EmscriptenBridge) {
     register_vector<int>("VectorInt");
     register_vector<double>("VectorDouble");
     register_vector<std::string>("VectorString");
+      
+   
     
 
     class_<FullEvalResult>("FullEvalResult")
@@ -68,6 +70,9 @@ EMSCRIPTEN_BINDINGS(EmscriptenBridge) {
 
     class_<FullAdvancedResult>("FullAdvancedResult")
         .property("ensembleDefect", &FullAdvancedResult::ensembleDefect)
+        .property("ensembleDefectNormalized", &FullAdvancedResult::ensembleDefectNormalized)
+        .property("mfeDefect", &FullAdvancedResult::mfeDefect)
+        .property("mfeDefectNormalized", &FullAdvancedResult::mfeDefectNormalized)
         .property("suboptStructures", &FullAdvancedResult::suboptStructures)
         .property("suboptEnergyError", &FullAdvancedResult::suboptEnergyError)
         .property("suboptFreeEnergy", &FullAdvancedResult::suboptFreeEnergy);
@@ -75,6 +80,7 @@ EMSCRIPTEN_BINDINGS(EmscriptenBridge) {
     function("FullEnsembleNoBindingSite", &FullEnsembleNoBindingSite, allow_raw_pointers());
     function("FullEnsembleWithOligos", &FullEnsembleWithOligos, allow_raw_pointers());
     function("GetDotParensStructureFromFoldStructure", &GetDotParensStructureFromFoldStructure, allow_raw_pointers());
+    function("GetEnsembleDefectFromDotParens", &GetEnsembleDefectFromDotParens, allow_raw_pointers());
     
 }
 
