@@ -42,6 +42,7 @@ test('NuPACK:suboptstructuresNoOligos', () => {
             isPsuedoknot, temperature
         );	   
         
+        
   
         let ensembleStructures: string[] = suboptEnsembleObject.suboptStructures;
         let ensembleStructuresEnergyError: number[]= suboptEnsembleObject.suboptEnergyError;
