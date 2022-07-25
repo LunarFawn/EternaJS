@@ -233,9 +233,12 @@ export default class NuPACK extends Folder {
         do {
             let result: FullEvalResult | null = null;
             try {
+                const sequncy:string = seq.sequenceString();
+                const structury:string = pairs.getParenthesis(seq, pseudoknots);
+
                 result = this._lib.FullEval(temp,
-                    seq.sequenceString(),
-                    pairs.getParenthesis(null, pseudoknots));
+                    sequncy,
+                    structury);
                 if (!result) {
                     throw new Error('NuPACK returned a null result');
                 }
@@ -716,7 +719,8 @@ export default class NuPACK extends Folder {
             if (!result) {
                 throw new Error('NuPACK returned a null result');
             }
-            return SecStruct.fromParens(result.structure);
+            const secstruct:SecStruct = SecStruct.fromParens(result.structure);
+            return secstruct;
         } catch (e) {
             log.error('CoFoldSequence error', e);
             return new SecStruct();

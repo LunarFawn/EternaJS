@@ -208,6 +208,86 @@ export default class SecStruct {
      * @param pseudoknots
      */
     public setPairs(parenthesis: string, pseudoknots: boolean = false) {
+        /*
+        let cutIndex:number = parenthesis.indexOf('&');
+
+        if(cutIndex== -1 )
+        {
+            //it is not an oligo so do nothing
+        }
+        else
+        {
+            //it is oligo so delete teh &
+            var tmp = parenthesis.split(''); // convert to an array
+            tmp.splice(cutIndex , 1); // remove 1 element from the array (adjusting for non-zero-indexed counts)
+            parenthesis = tmp.join(''); // reconstruct the string
+
+        }
+        */
+        this._pairs = new Array(parenthesis.length).fill(-1);
+        const pairStack: number[] = [];
+
+        for (let jj = 0; jj < parenthesis.length; jj++) {
+            if (parenthesis.charAt(jj) === '(') {
+                pairStack.push(jj);
+            } else if (parenthesis.charAt(jj) === ')') {
+                if (pairStack.length === 0) {
+                    throw new Error('Invalid parenthesis notation');
+                }
+
+                this._pairs[pairStack[pairStack.length - 1]] = jj;
+                pairStack.pop();
+            }
+        }
+
+        // If pseudoknots should be counted, manually repeat for
+        // the char pairs [], {}
+        if (pseudoknots) {
+            for (let jj = 0; jj < parenthesis.length; jj++) {
+                if (parenthesis.charAt(jj) === '[') {
+                    pairStack.push(jj);
+                } else if (parenthesis.charAt(jj) === ']') {
+                    if (pairStack.length === 0) {
+                        throw new Error('Invalid parenthesis notation');
+                    }
+
+                    this._pairs[pairStack[pairStack.length - 1]] = jj;
+                    pairStack.pop();
+                }
+            }
+
+            for (let jj = 0; jj < parenthesis.length; jj++) {
+                if (parenthesis.charAt(jj) === '{') {
+                    pairStack.push(jj);
+                } else if (parenthesis.charAt(jj) === '}') {
+                    if (pairStack.length === 0) {
+                        throw new Error('Invalid parenthesis notation');
+                    }
+
+                    this._pairs[pairStack[pairStack.length - 1]] = jj;
+                    pairStack.pop();
+                }
+            }
+            for (let jj = 0; jj < parenthesis.length; jj++) {
+                if (parenthesis.charAt(jj) === '<') {
+                    pairStack.push(jj);
+                } else if (parenthesis.charAt(jj) === '>') {
+                    if (pairStack.length === 0) {
+                        throw new Error('Invalid parenthesis notation');
+                    }
+
+                    this._pairs[pairStack[pairStack.length - 1]] = jj;
+                    pairStack.pop();
+                }
+            }
+        }
+
+        for (let jj = 0; jj < this._pairs.length; jj++) {
+            if (this._pairs[jj] >= 0) this._pairs[this._pairs[jj]] = jj;
+        }
+    }
+
+    public setPairsOligo(parenthesis: string, pseudoknots: boolean = false) {
         this._pairs = new Array(parenthesis.length).fill(-1);
         const pairStack: number[] = [];
 

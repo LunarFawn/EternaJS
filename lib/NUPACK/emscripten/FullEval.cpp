@@ -60,9 +60,16 @@ FullEvalResult* FullEval (int temperature_in, const std::string& seqString, cons
         if (pc) {
             num_cuts++;
             (*pc) = '+';
-            structure[pc - string] = '+';
+            //structure[pc - string] = '+';
         }
     } while(pc);
+
+    do {
+            pc = strchr(structure, '&');
+            if (pc) {                
+                (*pc) = '+';                
+            }
+        } while(pc);
 
 #ifdef WATER_MOD
     water_mod = 0;
